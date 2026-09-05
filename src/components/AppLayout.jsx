@@ -16,18 +16,30 @@ function AppLayout({ children }) {
           </div>
         </div>
 
-        <nav className="sidebar-nav" aria-label="Main navigation">
-          <NavLink to="/dashboard" className={getNavClass}>
+        <nav
+          className="sidebar-nav"
+          aria-label="Main navigation"
+        >
+          <NavLink
+            to="/dashboard"
+            className={getNavClass}
+          >
             <span>▣</span>
             Dashboard
           </NavLink>
 
-          <NavLink to="/patients" className={getNavClass}>
+          <NavLink
+            to="/patients"
+            className={getNavClass}
+          >
             <span>♙</span>
             Patients
           </NavLink>
 
-          <NavLink to="/doctors" className={getNavClass}>
+          <NavLink
+            to="/doctors"
+            className={getNavClass}
+          >
             <span>⚕</span>
             Doctors
           </NavLink>
@@ -38,6 +50,14 @@ function AppLayout({ children }) {
           >
             <span>□</span>
             Appointments
+          </NavLink>
+
+          <NavLink
+            to="/departments"
+            className={getNavClass}
+          >
+            <span>▤</span>
+            Departments
           </NavLink>
         </nav>
       </aside>

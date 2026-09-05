@@ -5,11 +5,11 @@ import {
 } from "react-router-dom";
 
 import {
-  getPatientById,
-  updatePatient,
-} from "../services/patientService";
+  getDoctorById,
+  updateDoctor,
+} from "../services/doctorService";
 
-function EditPatient() {
+function EditDoctor() {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -23,53 +23,40 @@ function EditPatient() {
   useEffect(() => {
     let isMounted = true;
 
-    async function loadPatient() {
+    async function loadDoctor() {
       try {
         setIsLoading(true);
         setLoadError("");
 
-        const patient = await getPatientById(id);
+        const doctor = await getDoctorById(id);
 
         if (!isMounted) {
           return;
         }
 
-        if (!patient) {
-          setLoadError("Patient not found.");
+        if (!doctor) {
+          setLoadError("Doctor not found.");
           setFormData(null);
           return;
         }
 
-        /*
-         * The backend stores one "name" field.
-         * The frontend form uses firstName and lastName.
-         * Split the backend name for the form.
-         */
-        const nameParts = patient.name
-          ? patient.name.trim().split(/\s+/)
-          : [];
-
-        const firstName = nameParts.shift() || "";
-        const lastName = nameParts.join(" ");
-
         setFormData({
-          firstName,
-          lastName,
-          age: String(patient.age ?? ""),
-          gender: patient.gender || "",
-          phone: patient.phone || "",
-          email: patient.email || "",
-          bloodGroup: patient.bloodGroup || "",
-          status: patient.status || "Active",
+          name: doctor.name || "",
+          specialization: doctor.specialization || "",
+          phone: doctor.phone || "",
+          email: doctor.email || "",
+          department: doctor.department || "",
+          status: doctor.status || "Active",
         });
       } catch (error) {
-        console.error("Error loading patient:", error);
+        console.error("Error loading doctor:", error);
 
         if (isMounted) {
           setLoadError(
             error.message ||
-              "Failed to load patient."
+              "Failed to load doctor."
           );
+
           setFormData(null);
         }
       } finally {
@@ -79,7 +66,7 @@ function EditPatient() {
       }
     }
 
-    loadPatient();
+    loadDoctor();
 
     return () => {
       isMounted = false;
@@ -105,29 +92,13 @@ function EditPatient() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName =
-        "First name is required.";
+    if (!formData.name.trim()) {
+      newErrors.name = "Doctor name is required.";
     }
 
-    if (!formData.lastName.trim()) {
-      newErrors.lastName =
-        "Last name is required.";
-    }
-
-    if (!formData.age) {
-      newErrors.age = "Age is required.";
-    } else if (
-      Number(formData.age) < 1 ||
-      Number(formData.age) > 120
-    ) {
-      newErrors.age =
-        "Enter an age between 1 and 120.";
-    }
-
-    if (!formData.gender) {
-      newErrors.gender =
-        "Gender is required.";
+    if (!formData.specialization.trim()) {
+      newErrors.specialization =
+        "Specialization is required.";
     }
 
     if (!/^[0-9]{10}$/.test(formData.phone)) {
@@ -136,6 +107,7 @@ function EditPatient() {
     }
 
     if (
+      formData.email &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
         formData.email
       )
@@ -144,9 +116,9 @@ function EditPatient() {
         "Enter a valid email address.";
     }
 
-    if (!formData.bloodGroup) {
-      newErrors.bloodGroup =
-        "Blood group is required.";
+    if (!formData.department.trim()) {
+      newErrors.department =
+        "Department is required.";
     }
 
     return newErrors;
@@ -167,34 +139,22 @@ function EditPatient() {
     try {
       setIsSubmitting(true);
 
-      /*
-       * Convert the frontend form structure:
-       *
-       * firstName + lastName
-       *
-       * into the backend structure:
-       *
-       * name
-       */
-      const patientData = {
-        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
-        age: Number(formData.age),
-        gender: formData.gender,
+      await updateDoctor(id, {
+        name: formData.name.trim(),
+        specialization: formData.specialization.trim(),
         phone: formData.phone,
-        email: formData.email,
-        bloodGroup: formData.bloodGroup,
+        email: formData.email.trim(),
+        department: formData.department.trim(),
         status: formData.status,
-      };
+      });
 
-      await updatePatient(id, patientData);
-
-      navigate("/patients");
+      navigate("/doctors");
     } catch (error) {
-      console.error("Error updating patient:", error);
+      console.error("Error updating doctor:", error);
 
       setSubmitError(
         error.message ||
-          "Failed to update patient. Please try again."
+          "Failed to update doctor. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -204,10 +164,10 @@ function EditPatient() {
   if (isLoading) {
     return (
       <div className="dashboard-section">
-        <h2>Loading Patient...</h2>
+        <h2>Loading Doctor...</h2>
 
         <p>
-          Please wait while the patient record is
+          Please wait while the doctor record is
           loaded.
         </p>
       </div>
@@ -217,19 +177,19 @@ function EditPatient() {
   if (!formData) {
     return (
       <div className="dashboard-section">
-        <h2>Patient not found</h2>
+        <h2>Doctor not found</h2>
 
         <p>
           {loadError ||
-            "The requested patient could not be found."}
+            "The requested doctor could not be found."}
         </p>
 
         <button
           type="button"
           className="primary-button"
-          onClick={() => navigate("/patients")}
+          onClick={() => navigate("/doctors")}
         >
-          Back to Patients
+          Back to Doctors
         </button>
       </div>
     );
@@ -238,116 +198,54 @@ function EditPatient() {
   return (
     <div>
       <div className="page-heading">
-        <h2>Edit Patient</h2>
+        <h2>Edit Doctor</h2>
 
         <p>
-          Update the patient record.
+          Update the doctor record.
         </p>
       </div>
 
       <section className="dashboard-section">
-        <form
-          onSubmit={handleSubmit}
-          noValidate
-        >
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-grid">
             <div className="form-field">
-              <label htmlFor="firstName">
-                First Name *
+              <label htmlFor="name">
+                Doctor Name *
               </label>
 
               <input
-                id="firstName"
-                name="firstName"
+                id="name"
+                name="name"
                 type="text"
-                value={formData.firstName}
+                value={formData.name}
                 onChange={handleChange}
                 disabled={isSubmitting}
               />
 
-              {errors.firstName && (
+              {errors.name && (
                 <p className="form-error">
-                  {errors.firstName}
+                  {errors.name}
                 </p>
               )}
             </div>
 
             <div className="form-field">
-              <label htmlFor="lastName">
-                Last Name *
+              <label htmlFor="specialization">
+                Specialization *
               </label>
 
               <input
-                id="lastName"
-                name="lastName"
+                id="specialization"
+                name="specialization"
                 type="text"
-                value={formData.lastName}
+                value={formData.specialization}
                 onChange={handleChange}
                 disabled={isSubmitting}
               />
 
-              {errors.lastName && (
+              {errors.specialization && (
                 <p className="form-error">
-                  {errors.lastName}
-                </p>
-              )}
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="age">
-                Age *
-              </label>
-
-              <input
-                id="age"
-                name="age"
-                type="number"
-                min="1"
-                max="120"
-                value={formData.age}
-                onChange={handleChange}
-                disabled={isSubmitting}
-              />
-
-              {errors.age && (
-                <p className="form-error">
-                  {errors.age}
-                </p>
-              )}
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="gender">
-                Gender *
-              </label>
-
-              <select
-                id="gender"
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                disabled={isSubmitting}
-              >
-                <option value="">
-                  Select gender
-                </option>
-
-                <option value="Male">
-                  Male
-                </option>
-
-                <option value="Female">
-                  Female
-                </option>
-
-                <option value="Other">
-                  Other
-                </option>
-              </select>
-
-              {errors.gender && (
-                <p className="form-error">
-                  {errors.gender}
+                  {errors.specialization}
                 </p>
               )}
             </div>
@@ -376,7 +274,7 @@ function EditPatient() {
 
             <div className="form-field">
               <label htmlFor="email">
-                Email *
+                Email
               </label>
 
               <input
@@ -396,34 +294,22 @@ function EditPatient() {
             </div>
 
             <div className="form-field">
-              <label htmlFor="bloodGroup">
-                Blood Group *
+              <label htmlFor="department">
+                Department *
               </label>
 
-              <select
-                id="bloodGroup"
-                name="bloodGroup"
-                value={formData.bloodGroup}
+              <input
+                id="department"
+                name="department"
+                type="text"
+                value={formData.department}
                 onChange={handleChange}
                 disabled={isSubmitting}
-              >
-                <option value="">
-                  Select blood group
-                </option>
+              />
 
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
-
-              {errors.bloodGroup && (
+              {errors.department && (
                 <p className="form-error">
-                  {errors.bloodGroup}
+                  {errors.department}
                 </p>
               )}
             </div>
@@ -461,9 +347,7 @@ function EditPatient() {
             <button
               type="button"
               className="secondary-button"
-              onClick={() =>
-                navigate("/patients")
-              }
+              onClick={() => navigate("/doctors")}
               disabled={isSubmitting}
             >
               Cancel
@@ -485,4 +369,4 @@ function EditPatient() {
   );
 }
 
-export default EditPatient;
+export default EditDoctor;

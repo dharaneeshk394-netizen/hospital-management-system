@@ -1,11 +1,57 @@
 import { useEffect, useState } from "react";
+
 import { getPatients } from "../services/patientService";
+import { getDepartments } from "../services/departmentService";
 
 function Dashboard() {
   const [patients, setPatients] = useState([]);
+  const [departments, setDepartments] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setPatients(getPatients());
+    async function loadDashboardData() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const [patientData, departmentData] =
+          await Promise.all([
+            getPatients(),
+            getDepartments(),
+          ]);
+
+        setPatients(
+          Array.isArray(patientData)
+            ? patientData
+            : []
+        );
+
+        setDepartments(
+          Array.isArray(departmentData)
+            ? departmentData
+            : []
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load dashboard data:",
+          error
+        );
+
+        setError(
+          error.message ||
+            "Failed to load dashboard data"
+        );
+
+        setPatients([]);
+        setDepartments([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDashboardData();
   }, []);
 
   const totalPatients = patients.length;
@@ -18,6 +64,8 @@ function Dashboard() {
     (patient) => patient.status === "Inactive"
   ).length;
 
+  const totalDepartments = departments.length;
+
   return (
     <div>
       <div className="page-heading">
@@ -27,6 +75,25 @@ function Dashboard() {
           Welcome to the Hospital Management System.
         </p>
       </div>
+
+      {loading && (
+        <div className="dashboard-section">
+          <p>Loading dashboard data...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="dashboard-section">
+          <h3>Unable to load dashboard data</h3>
+
+          <p>{error}</p>
+
+          <p>
+            Please make sure the backend server and
+            PostgreSQL database are running.
+          </p>
+        </div>
+      )}
 
       <div className="stats-grid">
         <div className="stat-card">
@@ -68,7 +135,8 @@ function Dashboard() {
             <h3>System Overview</h3>
 
             <p>
-              Current frontend is running with mock data.
+              Hospital information is loaded from the
+              backend API.
             </p>
           </div>
         </div>
@@ -76,22 +144,26 @@ function Dashboard() {
         <div className="overview-grid">
           <div className="overview-card">
             <span>Patients</span>
+
             <strong>{totalPatients}</strong>
           </div>
 
           <div className="overview-card">
             <span>Doctors</span>
+
             <strong>8</strong>
           </div>
 
           <div className="overview-card">
             <span>Appointments</span>
+
             <strong>12</strong>
           </div>
 
           <div className="overview-card">
             <span>Departments</span>
-            <strong>6</strong>
+
+            <strong>{totalDepartments}</strong>
           </div>
         </div>
       </section>
@@ -102,29 +174,33 @@ function Dashboard() {
         <div className="development-list">
           <div>
             <span>React Frontend</span>
+
             <strong className="success-text">
               Working
             </strong>
           </div>
 
           <div>
-            <span>Mock Patient Data</span>
+            <span>Patient API</span>
+
             <strong className="success-text">
-              Working
+              Connected
             </strong>
           </div>
 
           <div>
-            <span>Backend API</span>
-            <strong className="pending-text">
-              Not connected
+            <span>Node.js + Express</span>
+
+            <strong className="success-text">
+              Connected
             </strong>
           </div>
 
           <div>
             <span>PostgreSQL</span>
-            <strong className="pending-text">
-              Not connected
+
+            <strong className="success-text">
+              Connected
             </strong>
           </div>
         </div>

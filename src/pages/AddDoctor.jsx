@@ -1,19 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { createPatient } from "../services/patientService";
+import { createDoctor } from "../services/doctorService";
 
-function AddPatient() {
+function AddDoctor() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    age: "",
-    gender: "",
+    name: "",
+    specialization: "",
     phone: "",
     email: "",
-    bloodGroup: "",
+    department: "",
     status: "Active",
   });
 
@@ -40,39 +38,33 @@ function AddPatient() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required.";
+    if (!formData.name.trim()) {
+      newErrors.name = "Doctor name is required.";
     }
 
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required.";
-    }
-
-    if (!formData.age) {
-      newErrors.age = "Age is required.";
-    } else if (
-      Number(formData.age) < 1 ||
-      Number(formData.age) > 120
-    ) {
-      newErrors.age = "Age must be between 1 and 120.";
-    }
-
-    if (!formData.gender) {
-      newErrors.gender = "Gender is required.";
+    if (!formData.specialization.trim()) {
+      newErrors.specialization =
+        "Specialization is required.";
     }
 
     if (!/^[0-9]{10}$/.test(formData.phone)) {
-      newErrors.phone = "Enter a valid 10-digit phone number.";
+      newErrors.phone =
+        "Enter a valid 10-digit phone number.";
     }
 
     if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+      formData.email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        formData.email
+      )
     ) {
-      newErrors.email = "Enter a valid email address.";
+      newErrors.email =
+        "Enter a valid email address.";
     }
 
-    if (!formData.bloodGroup) {
-      newErrors.bloodGroup = "Blood group is required.";
+    if (!formData.department.trim()) {
+      newErrors.department =
+        "Department is required.";
     }
 
     return newErrors;
@@ -93,29 +85,22 @@ function AddPatient() {
     try {
       setIsSubmitting(true);
 
-      // Combine first name and last name
-      // because the backend expects a single "name" field.
-      const patientData = {
-        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
-        age: Number(formData.age),
-        gender: formData.gender,
+      await createDoctor({
+        name: formData.name.trim(),
+        specialization: formData.specialization.trim(),
         phone: formData.phone,
-        email: formData.email,
-        bloodGroup: formData.bloodGroup,
+        email: formData.email.trim(),
+        department: formData.department.trim(),
         status: formData.status,
-      };
+      });
 
-      await createPatient(patientData);
-
-      // Navigate only after the API successfully creates
-      // the patient in PostgreSQL.
-      navigate("/patients");
+      navigate("/doctors");
     } catch (error) {
-      console.error("Error creating patient:", error);
+      console.error("Error creating doctor:", error);
 
       setSubmitError(
         error.message ||
-          "Failed to create patient. Please try again."
+          "Failed to create doctor. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -125,10 +110,10 @@ function AddPatient() {
   return (
     <div>
       <div className="page-heading">
-        <h2>Add Patient</h2>
+        <h2>Add Doctor</h2>
 
         <p>
-          Create a new patient record.
+          Create a new doctor record.
         </p>
       </div>
 
@@ -136,105 +121,45 @@ function AddPatient() {
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-grid">
             <div className="form-field">
-              <label htmlFor="firstName">
-                First Name *
+              <label htmlFor="name">
+                Doctor Name *
               </label>
 
               <input
-                id="firstName"
-                name="firstName"
+                id="name"
+                name="name"
                 type="text"
-                value={formData.firstName}
+                value={formData.name}
                 onChange={handleChange}
-                placeholder="Enter first name"
+                placeholder="Enter doctor name"
                 disabled={isSubmitting}
               />
 
-              {errors.firstName && (
+              {errors.name && (
                 <p className="form-error">
-                  {errors.firstName}
+                  {errors.name}
                 </p>
               )}
             </div>
 
             <div className="form-field">
-              <label htmlFor="lastName">
-                Last Name *
+              <label htmlFor="specialization">
+                Specialization *
               </label>
 
               <input
-                id="lastName"
-                name="lastName"
+                id="specialization"
+                name="specialization"
                 type="text"
-                value={formData.lastName}
+                value={formData.specialization}
                 onChange={handleChange}
-                placeholder="Enter last name"
+                placeholder="Enter specialization"
                 disabled={isSubmitting}
               />
 
-              {errors.lastName && (
+              {errors.specialization && (
                 <p className="form-error">
-                  {errors.lastName}
-                </p>
-              )}
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="age">
-                Age *
-              </label>
-
-              <input
-                id="age"
-                name="age"
-                type="number"
-                min="1"
-                max="120"
-                value={formData.age}
-                onChange={handleChange}
-                placeholder="Enter age"
-                disabled={isSubmitting}
-              />
-
-              {errors.age && (
-                <p className="form-error">
-                  {errors.age}
-                </p>
-              )}
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="gender">
-                Gender *
-              </label>
-
-              <select
-                id="gender"
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                disabled={isSubmitting}
-              >
-                <option value="">
-                  Select gender
-                </option>
-
-                <option value="Male">
-                  Male
-                </option>
-
-                <option value="Female">
-                  Female
-                </option>
-
-                <option value="Other">
-                  Other
-                </option>
-              </select>
-
-              {errors.gender && (
-                <p className="form-error">
-                  {errors.gender}
+                  {errors.specialization}
                 </p>
               )}
             </div>
@@ -264,7 +189,7 @@ function AddPatient() {
 
             <div className="form-field">
               <label htmlFor="email">
-                Email *
+                Email
               </label>
 
               <input
@@ -273,7 +198,7 @@ function AddPatient() {
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="patient@example.com"
+                placeholder="doctor@example.com"
                 disabled={isSubmitting}
               />
 
@@ -285,34 +210,23 @@ function AddPatient() {
             </div>
 
             <div className="form-field">
-              <label htmlFor="bloodGroup">
-                Blood Group *
+              <label htmlFor="department">
+                Department *
               </label>
 
-              <select
-                id="bloodGroup"
-                name="bloodGroup"
-                value={formData.bloodGroup}
+              <input
+                id="department"
+                name="department"
+                type="text"
+                value={formData.department}
                 onChange={handleChange}
+                placeholder="Enter department"
                 disabled={isSubmitting}
-              >
-                <option value="">
-                  Select blood group
-                </option>
+              />
 
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
-
-              {errors.bloodGroup && (
+              {errors.department && (
                 <p className="form-error">
-                  {errors.bloodGroup}
+                  {errors.department}
                 </p>
               )}
             </div>
@@ -350,7 +264,7 @@ function AddPatient() {
             <button
               type="button"
               className="secondary-button"
-              onClick={() => navigate("/patients")}
+              onClick={() => navigate("/doctors")}
               disabled={isSubmitting}
             >
               Cancel
@@ -362,8 +276,8 @@ function AddPatient() {
               disabled={isSubmitting}
             >
               {isSubmitting
-                ? "Adding Patient..."
-                : "Add Patient"}
+                ? "Adding Doctor..."
+                : "Add Doctor"}
             </button>
           </div>
         </form>
@@ -372,4 +286,4 @@ function AddPatient() {
   );
 }
 
-export default AddPatient;
+export default AddDoctor;

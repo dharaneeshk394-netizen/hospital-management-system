@@ -1,86 +1,93 @@
-import { initialPatients } from "../data/patients";
+const API_BASE_URL = "http://localhost:5000/api/v1/patients";
 
-const STORAGE_KEY = "hospital_management_patients";
+// Helper function for API requests
+async function apiRequest(url, options = {}) {
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
 
-function getStoredPatients() {
-  const storedPatients = localStorage.getItem(STORAGE_KEY);
+  let result;
 
-  if (storedPatients) {
-    return JSON.parse(storedPatients);
+  try {
+    result = await response.json();
+  } catch (error) {
+    throw new Error("Server returned an invalid response");
   }
 
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(initialPatients)
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Something went wrong");
+  }
+
+  return result;
+}
+
+// Get all patients
+export async function getPatients() {
+  const result = await apiRequest(API_BASE_URL);
+
+  return result.data;
+}
+
+// Get one patient by ID
+export async function getPatientById(id) {
+  const result = await apiRequest(
+    `${API_BASE_URL}/${id}`
   );
 
-  return initialPatients;
+  return result.data;
 }
 
-function savePatients(patients) {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(patients)
-  );
+// Create a patient
+export async function createPatient(patientData) {
+  const result = await apiRequest(API_BASE_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      name: patientData.name,
+      age: Number(patientData.age),
+      gender: patientData.gender,
+      phone: patientData.phone,
+      email: patientData.email || "",
+      bloodGroup: patientData.bloodGroup || "",
+      status: patientData.status || "Active",
+    }),
+  });
+
+  return result.data;
 }
 
-export function getPatients() {
-  return getStoredPatients();
-}
-
-export function getPatientById(id) {
-  const patients = getStoredPatients();
-
-  return patients.find((patient) => patient.id === id);
-}
-
-export function createPatient(patientData) {
-  const patients = getStoredPatients();
-
-  const newPatient = {
-    ...patientData,
-    id: `PAT${String(patients.length + 1).padStart(3, "0")}`,
-    age: Number(patientData.age),
-  };
-
-  const updatedPatients = [
-    ...patients,
-    newPatient,
-  ];
-
-  savePatients(updatedPatients);
-
-  return newPatient;
-}
-
-export function updatePatient(id, patientData) {
-  const patients = getStoredPatients();
-
-  const updatedPatients = patients.map((patient) =>
-    patient.id === id
-      ? {
-          ...patient,
-          ...patientData,
-          age: Number(patientData.age),
-        }
-      : patient
+// Update a patient
+export async function updatePatient(id, patientData) {
+  const result = await apiRequest(
+    `${API_BASE_URL}/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        name: patientData.name,
+        age: Number(patientData.age),
+        gender: patientData.gender,
+        phone: patientData.phone,
+        email: patientData.email || "",
+        bloodGroup: patientData.bloodGroup || "",
+        status: patientData.status || "Active",
+      }),
+    }
   );
 
-  savePatients(updatedPatients);
-
-  return updatedPatients.find(
-    (patient) => patient.id === id
-  );
+  return result.data;
 }
 
-export function deletePatient(id) {
-  const patients = getStoredPatients();
-
-  const updatedPatients = patients.filter(
-    (patient) => patient.id !== id
+// Delete a patient
+export async function deletePatient(id) {
+  const result = await apiRequest(
+    `${API_BASE_URL}/${id}`,
+    {
+      method: "DELETE",
+    }
   );
 
-  savePatients(updatedPatients);
-
-  return true;
+  return result.data;
 }
